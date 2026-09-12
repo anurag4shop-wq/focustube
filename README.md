@@ -1,3 +1,8 @@
+FocusTube - Distraction Free
+Your Subscriptions.
+Zero Distractions.
+
+Login with Google to watch your feed without recommendations, shorts, or algorithm clutter.
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
