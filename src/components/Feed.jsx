@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fetchSubscriptionVideos } from '../services/youtube';
 
 export default function Feed({ onVideoSelect }) {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -31,12 +32,23 @@ export default function Feed({ onVideoSelect }) {
     };
   }, []);
 
+  const filteredVideos = useMemo(() => {
+    if (!searchQuery.trim()) return videos;
+    const query = searchQuery.toLowerCase();
+    return videos.filter(video => 
+      video.title.toLowerCase().includes(query) || 
+      video.channelTitle.toLowerCase().includes(query)
+    );
+  }, [videos, searchQuery]);
+
   if (loading) {
     return (
-      <div className="feed-grid">
-        {[...Array(12)].map((_, i) => (
-          <div key={i} className="video-card skeleton" style={{height: '240px', cursor: 'default'}} />
-        ))}
+      <div className="feed-container">
+        <div className="feed-grid">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="video-card skeleton" style={{height: '240px', cursor: 'default'}} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -58,22 +70,43 @@ export default function Feed({ onVideoSelect }) {
   }
 
   return (
-    <div className="feed-grid">
-      {videos.map(video => (
-        <div key={`${video.channelId}-${video.id}`} className="video-card hover-lift" onClick={() => onVideoSelect(video)}>
-          <div className="thumbnail-wrapper">
-            <img src={video.thumbnail} alt={video.title} loading="lazy" />
-          </div>
-          <div className="video-info">
-            <h3 className="video-title">{video.title}</h3>
-            <div className="channel-info">
-              {video.channelIcon && <img src={video.channelIcon} alt={video.channelTitle} className="channel-icon" />}
-              <span className="channel-name">{video.channelTitle}</span>
-            </div>
-            <span className="publish-date">{new Date(video.publishedAt).toLocaleDateString()}</span>
-          </div>
+    <div className="feed-container">
+      <div className="search-bar-wrapper">
+        <input 
+          type="text" 
+          className="search-input" 
+          placeholder="Search your feed by title or channel..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {searchQuery && (
+          <button className="clear-search" onClick={() => setSearchQuery('')}>×</button>
+        )}
+      </div>
+
+      {filteredVideos.length === 0 ? (
+        <div className="error-message" style={{background: 'transparent', color: 'var(--text-secondary)'}}>
+          No videos match "{searchQuery}"
         </div>
-      ))}
+      ) : (
+        <div className="feed-grid">
+          {filteredVideos.map(video => (
+            <div key={`${video.channelId}-${video.id}`} className="video-card hover-lift" onClick={() => onVideoSelect(video)}>
+              <div className="thumbnail-wrapper">
+                <img src={video.thumbnail} alt={video.title} loading="lazy" />
+              </div>
+              <div className="video-info">
+                <h3 className="video-title">{video.title}</h3>
+                <div className="channel-info">
+                  {video.channelIcon && <img src={video.channelIcon} alt={video.channelTitle} className="channel-icon" />}
+                  <span className="channel-name">{video.channelTitle}</span>
+                </div>
+                <span className="publish-date">{new Date(video.publishedAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
